@@ -20,7 +20,17 @@ def chatbot():
         elif re.search(r"(your name|who are you)", user_input):
             print("Chatbot: I'm a simple chatbot created using Python!")
         
-       
+        elif "time" in user_input:
+            from datetime import datetime
+            now = datetime.now().strftime("%H:%M:%S")
+            print(f"Chatbot: The current time is {now}")
+        
+        elif "weather" in user_input:
+            print("Chatbot: Sorry, I cannot check the weather right now. 🌦️")
+        
+        elif "help" in user_input:
+            print("Chatbot: I can respond to greetings, tell you the time, or just chat with you!")
+        
         else:
             print("Chatbot: Sorry, I don't understand that. Can you rephrase?")
 
