@@ -20,3 +20,71 @@ def check_win(board, player):
         if board[condition[0]] == board[condition[1]] == board[condition[2]] == player:
             return True
     return False
+
+def check_draw(board):
+    """Checks if the game is a draw (board is full)."""
+    return ' ' not in board
+
+def play_game():
+    """Runs a single round of Tic-Tac-Toe."""
+    # Reset the board for a new game
+    board = [' ' for _ in range(9)]
+    current_player = 'X'
+    
+    while True:
+        print_board(board)
+        print(f"Player {current_player}'s turn.")
+
+        try:
+            move_str = input("Choose a spot (1-9): ")
+            if not move_str: # Handle empty input
+                print("⚠️ Please enter a number.")
+                continue
+
+            move = int(move_str)
+
+            if not 1 <= move <= 9:
+                print("⚠️ Invalid number. Please choose between 1 and 9.")
+                continue
+            if board[move - 1] != ' ':
+                print("🚫 That spot is already taken! Choose another one.")
+                continue
+
+            board[move - 1] = current_player
+
+            if check_win(board, current_player):
+                print_board(board)
+                print(f"🎉 Congratulations! Player {current_player} wins! 🎉")
+                return # End this game round
+
+            if check_draw(board):
+                print_board(board)
+                print("🤝 It's a draw! 🤝")
+                return # End this game round
+            
+            # Switch players
+            current_player = 'O' if current_player == 'X' else 'X'
+
+        except ValueError:
+            print("⚠️ Invalid input. Please enter a number from 1 to 9.")
+
+# Main function to control the game and the "Play Again" loop
+def main():
+    """Main entry point of the script."""
+    print("Welcome to Tic-Tac-Toe! 🕹️")
+    while True:
+        play_game()
+        
+        while True:
+            play_again = input("Play again? (yes/no): ").lower().strip()
+            if play_again in ["yes", "no"]:
+                break
+            print("Invalid input. Please enter 'yes' or 'no'.")
+        
+        if play_again == "no":
+            print("Thanks for playing! 👋")
+            break
+
+# This makes sure the script runs the main function
+if __name__ == "__main__":
+    main()
