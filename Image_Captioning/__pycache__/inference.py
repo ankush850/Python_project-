@@ -80,3 +80,24 @@ if __name__ == "__main__":
 
     model = init_model(device)
 
+    with torch.no_grad():
+        print("🚀 Inference started...")
+        for batch_idx, batch in tqdm(enumerate(batches), unit="batch"):
+            pil_images = utils.read_with_pil(batch)
+            transformed_images = utils.prep_images(pil_images, device)
+
+            if not Path("captions").is_dir():
+                utils.create_dir("captions")
+
+            with open(f"captions/{batch_idx}_captions.txt", "w+", encoding="utf-8") as file:
+                for path, image in zip(batch, transformed_images):
+                    caption = model.generate(
+                        image,
+                        sample=False,
+                        num_beams=3,
+                        max_length=20,
+                        min_length=5
+                    )
+                    file.write(path + ", " + caption[0] + "\n")
+
+    print("\n✅ Captioning finished! Check the 'captions/' folder for results.")
