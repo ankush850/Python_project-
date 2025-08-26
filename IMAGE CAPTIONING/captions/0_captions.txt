@@ -1,0 +1,1 @@
+images\image_001.png, a robot holding a large orange object in his hand
