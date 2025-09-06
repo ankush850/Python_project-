@@ -1,31 +1,25 @@
 import cv2
-import os
-import numpy as np
 
-current_label = 0
-for person_name in os.listdir(data_path):
-    person_folder = os.path.join(data_path, person_name)
-    if not os.path.isdir(person_folder):
-        continue
-    
-    label_map[current_label] = person_name
-    for img_name in os.listdir(person_folder):
-        img_path = os.path.join(person_folder, img_name)
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        if img is None:
-            continue
-        faces.append(img)
-        labels.append(current_label)
-    current_label += 1
+cap = cv2.VideoCapture(0)
 
-faces = np.array(faces)
-labels = np.array(labels)
+face_cascade = cv2.CascadeClassifier(
+    cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+body_cascade = cv2.CascadeClassifier(
+    cv2.data.haarcascades + "haarcascade_fullbody.xml")
 
-# Train recognizer
-recognizer = cv2.face.LBPHFaceRecognizer_create()
-recognizer.train(faces, labels)
+while True:
+    _, frame = cap.read()
 
-# Save model
-recognizer.save("trained_faces.yml")
-np.save("labels.npy", label_map)
-print("Training complete, model saved.")
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+
+    for (x, y, width, height) in faces:
+       cv2.rectangle(frame, (x, y), (x + width, y + height), (255, 0, 0), 3)
+
+    cv2.imshow("Camera", frame)
+
+    if cv2.waitKey(1) == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
