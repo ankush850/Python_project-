@@ -52,20 +52,30 @@ Check inside each project folder for a requirements.txt or other setup instructi
 Choose a project file (for example chatbot.py) and run:
 
 python chatbot.py
-
-
-📂 Project Structure
+Project Structure
 Python_project-/
-│── README.md
-│── img_to_pdf.py
-│── face_rego.py
-│── tic_tac_toe.py
-│── chatbot.py
-│── recommendation_system/
-│   └── ...
-│── Image Captioning/
-│   └── ...
-
+│── README.md                # Documentation for the repo
+│── requirements.txt         # Dependencies (if needed)
+│
+├── img_to_pdf.py            # Convert images to PDF
+├── face_rego.py             # Face recognition project
+├── tic_tac_toe.py           # Tic-Tac-Toe game
+├── chatbot.py               # Simple chatbot
+│
+├── recommendation_system/   # Folder for recommendation system
+│   ├── recommender.py
+│   ├── data/                # Sample dataset
+│   └── README.md
+│
+├── image_captioning/        # Folder for image captioning project
+│   ├── caption_model.py
+│   ├── utils.py
+│   └── README.md
+│
+└── tests/                   # Tests for your projects
+    ├── test_chatbot.py
+    ├── test_tic_tac_toe.py
+    └── ...
 
 Each Python file is a standalone project.
 
