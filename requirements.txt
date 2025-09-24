@@ -1,0 +1,28 @@
+# Common utilities
+numpy
+pandas
+
+# Machine Learning / Recommendation
+scikit-learn
+scipy
+
+# Image handling
+pillow
+opencv-python
+
+# Face Recognition
+face-recognition
+dlib
+
+# Image Captioning
+tensorflow
+keras
+matplotlib
+nltk
+
+# Chatbot (basic NLP support)
+nltk
+
+# Extra utilities
+flask         # if you later want to add web UI
+pygame        # if you want GUI for tic-tac-toe/game
