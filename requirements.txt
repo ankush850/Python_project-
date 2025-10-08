@@ -1,28 +1,125 @@
-# Common utilities
+# =========================================
+# Python Projects - Full Requirements
+# =========================================
+
+# ---- Core Python Libraries ----
 numpy
 pandas
-
-# Machine Learning / Recommendation
-scikit-learn
-scipy
-
-# Image handling
-pillow
-opencv-python
-
-# Face Recognition
-face-recognition
-dlib
-
-# Image Captioning
-tensorflow
-keras
 matplotlib
-nltk
+seaborn
+scipy
+datetime
+tqdm
 
-# Chatbot (basic NLP support)
-nltk
+# ---- Image Processing ----
+opencv-python
+Pillow
+imageio
+scikit-image
 
-# Extra utilities
-flask         # if you later want to add web UI
-pygame        # if you want GUI for tic-tac-toe/game
+# ---- Machine Learning / AI ----
+scikit-learn
+tensorflow
+torch
+torchvision
+torchaudio
+transformers
+keras
+joblib
+
+# ---- Natural Language Processing ----
+nltk
+spacy
+textblob
+sentence-transformers
+
+# ---- Computer Vision ----
+mediapipe
+dlib
+face-recognition
+
+# ---- Web Development / APIs ----
+Flask
+Flask-Cors
+Flask-RESTful
+requests
+beautifulsoup4
+lxml
+fastapi
+uvicorn
+
+# ---- File, PDF, and Data Utilities ----
+PyPDF2
+fpdf
+python-docx
+openpyxl
+pytube
+zipfile36
+qrcode
+reportlab
+pdf2image
+docx2txt
+
+# ---- GUI / Desktop Tools ----
+tkinterweb
+PyQt5
+customtkinter
+pygame
+
+# ---- System & Monitoring ----
+psutil
+platformdirs
+GPUtil
+
+# ---- Jupyter / Notebook Tools ----
+jupyter
+notebook
+ipykernel
+
+# ---- Web Scraping / Automation ----
+selenium
+bs4
+requests-html
+
+# ---- Visualization ----
+plotly
+dash
+streamlit
+
+# ---- Misc / Utils ----
+regex
+uuid
+logging
+argparse
+colorama
+python-dotenv
+pydantic
+
+# ---- Audio / Video ----
+pydub
+moviepy
+SpeechRecognition
+gTTS
+opencv-contrib-python
+
+# ---- Recommendation / Data Science ----
+surprise
+lightfm
+xgboost
+catboost
+
+# ---- Deployment / Testing ----
+gunicorn
+pytest
+pytest-flask
+black
+flake8
+
+# ---- Security / Encryption ----
+cryptography
+pyjwt
+
+# ---- Optional Add-ons ----
+gradio
+fastapi
+huggingface-hub
