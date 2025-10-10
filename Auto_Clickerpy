@@ -1,0 +1,288 @@
+import threading
+import time
+import sys
+import tkinter as tk
+from tkinter import ttk, StringVar, IntVar, BooleanVar
+from pynput.mouse import Controller, Button
+from pynput.keyboard import Listener, KeyCode
+
+# --- Configurable hotkeys ---
+HOT_TOGGLE = KeyCode(char='t')
+HOT_QUIT = KeyCode(char='q')
+HOT_DOUBLE = KeyCode(char='d')
+HOT_HOLD = KeyCode(char='h')
+HOT_BTN1 = KeyCode(char='1')
+HOT_BTN2 = KeyCode(char='2')
+HOT_BTN3 = KeyCode(char='3')
+HOT_SPEED_UP = KeyCode.from_vk(0x26)   # Up arrow - platform VK
+HOT_SPEED_DOWN = KeyCode.from_vk(0x28) # Down arrow - platform VK
+
+# --- Mouse & state ---
+MOUSE = Controller()
+
+class AutoClickerCore:
+    def __init__(self):
+        self._running = False
+        self._hold_mode = False
+        self._double_click = False
+        self._button = Button.left
+        self._cps = 10.0
+        self._interval = 1.0 / self._cps
+        self._lock = threading.Lock()
+        self._exit_flag = False
+        self._hold_key_down = False
+
+    # state getters/setters
+    def set_cps(self, cps):
+        with self._lock:
+            self._cps = max(0.1, float(cps))
+            self._interval = 1.0 / self._cps
+
+    def get_cps(self):
+        with self._lock:
+            return self._cps
+
+    def set_button(self, btn_id):
+        with self._lock:
+            if btn_id == 1:
+                self._button = Button.left
+            elif btn_id == 2:
+                self._button = Button.middle
+            elif btn_id == 3:
+                self._button = Button.right
+
+    def set_double(self, val: bool):
+        with self._lock:
+            self._double_click = bool(val)
+
+    def set_hold_mode(self, val: bool):
+        with self._lock:
+            self._hold_mode = bool(val)
+            if not self._hold_mode:
+                self._hold_key_down = False
+
+    def toggle_running(self):
+        with self._lock:
+            self._running = not self._running
+            return self._running
+
+    def set_running(self, val: bool):
+        with self._lock:
+            self._running = bool(val)
+
+    def is_running(self):
+        with self._lock:
+            return self._running
+
+    def set_exit(self):
+        with self._lock:
+            self._exit_flag = True
+
+    def should_exit(self):
+        with self._lock:
+            return self._exit_flag
+
+    def notify_hold_key(self, is_down: bool):
+        with self._lock:
+            self._hold_key_down = is_down
+
+    def hold_key_is_down(self):
+        with self._lock:
+            return self._hold_key_down
+
+    def run_click_loop(self, status_callback=None):
+        while not self.should_exit():
+            if self._hold_mode:
+                active = self.hold_key_is_down()
+            else:
+                active = self.is_running()
+
+            if active:
+                # perform a click (single or double)
+                btn = self._button
+                if self._double_click:
+                    MOUSE.click(btn, 2)
+                else:
+                    MOUSE.click(btn, 1)
+            # sleep according to CPS
+            interval = None
+            with self._lock:
+                interval = self._interval
+            time.sleep(max(0.001, interval))
+            if status_callback:
+                status_callback()
+        # cleanup if needed
+        self.set_running(False)
+
+# --- GUI App ---
+class AutoClickerApp(tk.Tk):
+    def __init__(self, core: AutoClickerCore):
+        super().__init__()
+        self.core = core
+        self.title("Large Autoclicker - GUI")
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self.resizable(False, False)
+
+        self.style = ttk.Style(self)
+        try:
+            self.style.theme_use('clam')
+        except Exception:
+            pass
+
+        # Variables
+        self.var_cps = tk.DoubleVar(value=self.core.get_cps())
+        self.var_button = tk.IntVar(value=1)
+        self.var_double = tk.BooleanVar(value=False)
+        self.var_hold = tk.BooleanVar(value=False)
+        self.var_status = tk.StringVar(value="Idle")
+        self.var_running = tk.BooleanVar(value=False)
+
+        # Layout
+        frm = ttk.Frame(self, padding=12)
+        frm.grid(row=0, column=0, sticky="nsew")
+
+        ttk.Label(frm, text="CPS (Clicks Per Second)").grid(row=0, column=0, sticky="w")
+        self.slider = ttk.Scale(frm, from_=0.5, to=200, variable=self.var_cps, command=self._on_cps_change)
+        self.slider.grid(row=1, column=0, columnspan=3, sticky="we", pady=(0,8))
+
+        self.lbl_cps_value = ttk.Label(frm, textvariable=self.var_cps)
+        self.lbl_cps_value.grid(row=1, column=3, padx=(6,0))
+
+        ttk.Label(frm, text="Mouse Button").grid(row=2, column=0, sticky="w")
+        bframe = ttk.Frame(frm)
+        bframe.grid(row=3, column=0, columnspan=4, sticky="w", pady=(0,8))
+        ttk.Radiobutton(bframe, text="Left (1)", variable=self.var_button, value=1, command=self._on_button_change).grid(row=0, column=0, padx=6)
+        ttk.Radiobutton(bframe, text="Middle (2)", variable=self.var_button, value=2, command=self._on_button_change).grid(row=0, column=1, padx=6)
+        ttk.Radiobutton(bframe, text="Right (3)", variable=self.var_button, value=3, command=self._on_button_change).grid(row=0, column=2, padx=6)
+
+        ttk.Checkbutton(frm, text="Double Click (D)", variable=self.var_double, command=self._on_double_toggle).grid(row=4, column=0, sticky="w")
+        ttk.Checkbutton(frm, text="Hold Mode (H) - click only while toggle key held", variable=self.var_hold, command=self._on_hold_toggle).grid(row=5, column=0, sticky="w", pady=(0,8))
+
+        btn_frame = ttk.Frame(frm)
+        btn_frame.grid(row=6, column=0, columnspan=4, pady=(0,8))
+        self.btn_toggle = ttk.Button(btn_frame, text="Start (T)", command=self._gui_toggle)
+        self.btn_toggle.grid(row=0, column=0, padx=6)
+        self.btn_quit = ttk.Button(btn_frame, text="Quit (Q)", command=self._on_close)
+        self.btn_quit.grid(row=0, column=1, padx=6)
+
+        ttk.Label(frm, text="Status:").grid(row=7, column=0, sticky="w")
+        ttk.Label(frm, textvariable=self.var_status).grid(row=7, column=1, columnspan=3, sticky="w")
+
+        ttk.Separator(frm, orient="horizontal").grid(row=8, column=0, columnspan=4, sticky="we", pady=8)
+
+        hints = (
+            "Hotkeys:\n"
+            "T = Toggle Start/Stop\n"
+            "Q = Quit\n"
+            "↑ / ↓ = Speed +/-\n"
+            "1 / 2 / 3 = Left / Middle / Right\n"
+            "D = Double click toggle\n"
+            "H = Hold mode toggle (clicks only while holding 'T')\n"
+        )
+        ttk.Label(frm, text=hints, justify="left").grid(row=9, column=0, columnspan=4, sticky="w")
+
+        # start background click thread
+        self._worker_thread = threading.Thread(target=self.core.run_click_loop, args=(self._update_status,), daemon=True)
+        self._worker_thread.start()
+
+        # start keyboard listener thread
+        self._kb_listener = Listener(on_press=self._on_key_press, on_release=self._on_key_release)
+        self._kb_listener_thread = threading.Thread(target=self._kb_listener.run, daemon=True)
+        self._kb_listener_thread.start()
+
+        # periodic GUI update
+        self.after(150, self._periodic_update)
+
+    def _on_cps_change(self, *_):
+        v = self.var_cps.get()
+        self.core.set_cps(v)
+        self.lbl_cps_value.config(text=f"{v:.1f}")
+
+    def _on_button_change(self):
+        self.core.set_button(self.var_button.get())
+
+    def _on_double_toggle(self):
+        val = bool(self.var_double.get())
+        self.core.set_double(val)
+
+    def _on_hold_toggle(self):
+        val = bool(self.var_hold.get())
+        self.core.set_hold_mode(val)
+
+    def _gui_toggle(self):
+        running = self.core.toggle_running()
+        self.var_running.set(running)
+        self.btn_toggle.config(text="Stop (T)" if running else "Start (T)")
+        self._update_status()
+
+    def _update_status(self):
+        btn_map = {Button.left: "Left", Button.middle: "Middle", Button.right: "Right"}
+        with self.core._lock:
+            running = self.core._running
+            hold = self.core._hold_mode
+            dbl = self.core._double_click
+            btn = btn_map.get(self.core._button, "Left")
+            cps = self.core._cps
+            hold_down = self.core._hold_key_down
+        status = f"{'RUNNING' if running or (hold and hold_down) else 'IDLE'} | {btn} | {cps:.1f} CPS | {'DOUBLE' if dbl else 'SINGLE'} | {'HOLD' if hold else 'TOGGLE'}"
+        self.var_status.set(status)
+        self.var_running.set(running)
+
+    def _periodic_update(self):
+        self._update_status()
+        self.after(150, self._periodic_update)
+
+    def _on_key_press(self, key):
+        try:
+            if key == HOT_TOGGLE:
+                if self.var_hold.get():
+                    # in hold mode, pressing the toggle key down should start clicking while held
+                    self.core.notify_hold_key(True)
+                else:
+                    self._gui_toggle()
+            elif key == HOT_QUIT:
+                self._on_close()
+            elif key == HOT_DOUBLE:
+                self.var_double.set(not self.var_double.get())
+                self._on_double_toggle()
+            elif key == HOT_HOLD:
+                self.var_hold.set(not self.var_hold.get())
+                self._on_hold_toggle()
+            elif key == HOT_BTN1:
+                self.var_button.set(1)
+                self._on_button_change()
+            elif key == HOT_BTN2:
+                self.var_button.set(2)
+                self._on_button_change()
+            elif key == HOT_BTN3:
+                self.var_button.set(3)
+                self._on_button_change()
+            elif key == HOT_SPEED_UP:
+                self.var_cps.set(min(200, self.var_cps.get() + 1))
+                self._on_cps_change()
+            elif key == HOT_SPEED_DOWN:
+                self.var_cps.set(max(0.5, self.var_cps.get() - 1))
+                self._on_cps_change()
+        except Exception:
+            pass
+
+    def _on_key_release(self, key):
+        try:
+            if key == HOT_TOGGLE and self.var_hold.get():
+                self.core.notify_hold_key(False)
+        except Exception:
+            pass
+
+    def _on_close(self):
+        self.core.set_exit()
+        try:
+            self._kb_listener.stop()
+        except Exception:
+            pass
+        self.destroy()
+        sys.exit(0)
+
+if __name__ == "__main__":
+    core = AutoClickerCore()
+    app = AutoClickerApp(core)
+    app.mainloop()
